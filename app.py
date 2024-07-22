@@ -6,9 +6,11 @@ import seaborn as sns
 import os
 
 # Load the model
-model_path = os.path.join('models', 'pipeline.joblib')
+# pipeline_path = os.path.join('pipeline.joblib')
+### for now commented the pipeline part as model is being used just for prediction 
+### so pipeline is an overkill, use it when you have multiple steps before and after prediction
 
-model = None
+model_path = os.path.join('hdp_model.pkl')
 
 if os.path.exists(model_path):
     try:
@@ -19,11 +21,10 @@ if os.path.exists(model_path):
 else:
     st.error(f"Model file not found at {model_path}. Please check the file path.")
 
-def predict_heart_disease(features):
+def predict(features):
     if model is None:
         st.error("Model not loaded. Cannot make prediction.")
         return None, None
-    
     try:
         # Make prediction
         prediction = model.predict(features)
@@ -62,7 +63,6 @@ def main():
     exang_dict = {'No': 0, 'Yes': 1}
 
     input_data = pd.DataFrame({
-        'age': [age],
         'cp': [cp_dict[cp]],
         'trestbps': [trestbps],
         'chol': [chol],
@@ -70,15 +70,11 @@ def main():
         'restecg': [restecg_dict[restecg]],
         'thalach': [thalach],
         'exang': [exang_dict[exang]],
-        'oldpeak': [oldpeak],
-        'slope': [slope],
-        'ca': [ca],
-        'thal': [thal]
     })
 
     # Make prediction when button is clicked
     if st.button('Predict'):
-        prediction, probability = predict_heart_disease(input_data)
+        prediction, probability = predict(input_data)
         
         if prediction is not None:
             st.subheader('Prediction')
@@ -92,13 +88,16 @@ def main():
 
             # Visualize feature importance
             st.subheader('Feature Importance')
-            feature_importance = model.named_steps['classifier'].feature_importances_
-            feature_names = model.named_steps['preprocessor'].get_feature_names_out()
-            
+            # feature_importance = model.named_steps['classifier'].feature_importances_
+            # feature_names = model.named_steps['preprocessor'].get_feature_names_out()
+            ### Commented lines applicable to tree based models, here logistic regeression is used so made some changes
+            feature_importance = model.coef_
+
             fig, ax = plt.subplots()
-            sns.barplot(x=feature_importance, y=feature_names, ax=ax)
+            sns.barplot(x=feature_importance[0], y=input_data.columns, ax=ax)
             plt.title('Feature Importance')
             st.pyplot(fig)
+
         else:
             st.error("Prediction could not be made.")
 
